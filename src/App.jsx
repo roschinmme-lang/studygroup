@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import TopNav from "./components/TopNav.jsx";
 import LeftSidebar from "./components/LeftSidebar.jsx";
 import RightSidebar from "./components/RightSidebar.jsx";
+import MobileTabBar from "./components/MobileTabBar.jsx";
 import FeedView from "./components/FeedView.jsx";
 import VibesView from "./components/VibesView.jsx";
 import SquadsView from "./components/SquadsView.jsx";
@@ -26,6 +27,8 @@ export default function App() {
   const [squads, setSquads] = useState([]);
   const [selectedSquadId, setSelectedSquadId] = useState(null);
   const [toast, setToast] = useState(null);
+  const [mobileLeftOpen, setMobileLeftOpen] = useState(false);
+  const [mobileRightOpen, setMobileRightOpen] = useState(false);
 
   const showToast = useCallback((msg) => setToast(msg), []);
 
@@ -211,8 +214,11 @@ export default function App() {
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
 
   return (
-    <div style={{ height: "100vh", width: "100%", overflow: "hidden" }} data-theme={theme}>
-      <div style={{ background: "var(--bg)", height: "100%", overflow: "hidden", position: "relative" }}>
+    <div className="app-shell" data-theme={theme}>
+      <div
+        className="flex flex-col"
+        style={{ background: "var(--bg)", height: "100%", overflow: "hidden", position: "relative" }}
+      >
         {authLoading ? (
           <div className="w-full h-full flex items-center justify-center text-sm" style={{ color: "var(--text-secondary)" }}>
             Loading...
@@ -233,9 +239,11 @@ export default function App() {
               onLogout={logout}
               userMenuOpen={userMenuOpen}
               setUserMenuOpen={setUserMenuOpen}
+              onOpenLeftMenu={() => setMobileLeftOpen(true)}
+              onOpenRightPanel={() => setMobileRightOpen(true)}
             />
 
-            <div className="flex" style={{ height: "calc(100% - 56px)", marginTop: 56, overflow: "hidden" }}>
+            <div className="flex flex-1 overflow-hidden">
               <LeftSidebar
                 activeView={activeView}
                 setActiveView={(v) => {
@@ -245,6 +253,8 @@ export default function App() {
                 activeUser={user}
                 squads={squads}
                 onSelectSquad={handleSelectSquad}
+                mobileOpen={mobileLeftOpen}
+                onClose={() => setMobileLeftOpen(false)}
               />
 
               <main className="flex-1 h-full overflow-y-auto overflow-x-hidden">
@@ -306,8 +316,22 @@ export default function App() {
                 )}
               </main>
 
-              <RightSidebar modLog={modLog} currentUser={user} onToast={showToast} />
+              <RightSidebar
+                modLog={modLog}
+                currentUser={user}
+                onToast={showToast}
+                mobileOpen={mobileRightOpen}
+                onClose={() => setMobileRightOpen(false)}
+              />
             </div>
+
+            <MobileTabBar
+              activeView={activeView}
+              setActiveView={(v) => {
+                setSelectedSquadId(null);
+                setActiveView(v);
+              }}
+            />
           </>
         )}
       </div>

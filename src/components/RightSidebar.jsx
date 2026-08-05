@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AlertTriangle, ShieldAlert, Lock, GraduationCap } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Lock, GraduationCap, X } from "lucide-react";
 import { Avatar, TierBadge } from "./Shared.jsx";
 import { MOD_SYSTEM_NOTES } from "../data/mockData.js";
 import { fetchSuggestedProfiles, fetchMentor } from "../lib/usersApi.js";
@@ -79,7 +79,7 @@ function ModerationLogEntry({ entry }) {
   );
 }
 
-export default function RightSidebar({ modLog, currentUser, onToast }) {
+export default function RightSidebar({ modLog, currentUser, onToast, mobileOpen, onClose }) {
   const [profiles, setProfiles] = useState([]);
   const [mentor, setMentor] = useState(null);
   const [dmTarget, setDmTarget] = useState(null);
@@ -95,7 +95,29 @@ export default function RightSidebar({ modLog, currentUser, onToast }) {
   }, [currentUser, onToast]);
 
   return (
-    <aside className="w-[320px] shrink-0 h-full overflow-y-auto px-4 py-4" style={{ borderLeft: "1px solid var(--border)" }}>
+    <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-30 lg:hidden"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={`fixed lg:static inset-y-0 right-0 z-40 lg:z-auto w-[300px] sm:w-[320px] shrink-0 h-full overflow-y-auto px-4 py-4 transform transition-transform duration-300 lg:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+        style={{ background: "var(--surface)", borderLeft: "1px solid var(--border)" }}
+      >
+        <div className="flex items-center justify-between mb-3 lg:hidden">
+          <span className="text-sm font-bold" style={{ color: "var(--text)" }}>
+            Directory &amp; moderation
+          </span>
+          <button onClick={onClose} style={{ color: "var(--text-secondary)" }} aria-label="Close panel">
+            <X size={18} />
+          </button>
+        </div>
+
       <section className="mb-5">
         <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: "var(--text-secondary)" }}>
           Student profiles
@@ -152,6 +174,7 @@ export default function RightSidebar({ modLog, currentUser, onToast }) {
       {dmTarget && currentUser && (
         <DMModal currentUser={currentUser} otherUser={dmTarget} onClose={() => setDmTarget(null)} onError={onToast} />
       )}
-    </aside>
+      </aside>
+    </>
   );
 }

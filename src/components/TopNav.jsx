@@ -1,5 +1,5 @@
 import React from "react";
-import { Sun, Moon, Search, Home, Zap, Users, LogOut } from "lucide-react";
+import { Sun, Moon, Search, Home, Zap, Users, LogOut, Menu, PanelRightOpen } from "lucide-react";
 import { Avatar, TierBadge } from "./Shared.jsx";
 
 export default function TopNav({
@@ -11,6 +11,8 @@ export default function TopNav({
   onLogout,
   userMenuOpen,
   setUserMenuOpen,
+  onOpenLeftMenu,
+  onOpenRightPanel,
 }) {
   const navTabs = [
     { id: "feed", icon: Home, label: "Home" },
@@ -20,22 +22,31 @@ export default function TopNav({
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 h-14 flex items-center px-4 gap-4 z-50 transition-colors duration-300"
+      className="h-14 shrink-0 flex items-center px-3 sm:px-4 gap-2 sm:gap-4 transition-colors duration-300"
       style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
     >
-      <div className="flex items-center gap-2 w-[280px] shrink-0">
+      <button
+        onClick={onOpenLeftMenu}
+        className="md:hidden w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+        style={{ color: "var(--text)" }}
+        aria-label="Open menu"
+      >
+        <Menu size={20} />
+      </button>
+
+      <div className="flex items-center gap-2 md:w-[280px] shrink-0">
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-lg shrink-0"
           style={{ background: "var(--accent)", color: "#050505" }}
         >
           S
         </div>
-        <span className="font-extrabold text-lg tracking-tight" style={{ color: "var(--text)" }}>
+        <span className="font-extrabold text-lg tracking-tight hidden sm:inline" style={{ color: "var(--text)" }}>
           studygroup<span style={{ color: "var(--accent)" }}>.ph</span>
         </span>
       </div>
 
-      <div className="flex-1 max-w-md">
+      <div className="flex-1 max-w-md hidden sm:block">
         <div
           className="flex items-center gap-2 h-9 px-3 rounded-full transition-colors"
           style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
@@ -49,7 +60,7 @@ export default function TopNav({
         </div>
       </div>
 
-      <nav className="hidden md:flex items-center gap-1">
+      <nav className="hidden md:flex items-center gap-1 ml-auto">
         {navTabs.map((t) => {
           const Icon = t.icon;
           const active = activeView === t.id;
@@ -73,7 +84,16 @@ export default function TopNav({
         })}
       </nav>
 
-      <div className="flex items-center gap-3 ml-auto shrink-0 relative">
+      <div className="flex items-center gap-2 sm:gap-3 ml-auto md:ml-0 shrink-0 relative">
+        <button
+          onClick={onOpenRightPanel}
+          className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center"
+          style={{ background: "var(--bg)", color: "var(--text)" }}
+          aria-label="Open directory & moderation panel"
+        >
+          <PanelRightOpen size={17} />
+        </button>
+
         <button
           onClick={toggleTheme}
           className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"

@@ -56,6 +56,20 @@ Open `http://localhost:5173`, sign up with a real email + password, and you're i
   email, and the app surfaces that as a clear error on signup.
 - Sessions persist across refreshes (Supabase handles this) and you log out from the avatar menu.
 
+## Mobile / responsive
+
+The layout adapts across three breakpoints:
+
+- **Below `md` (phones)**: the left nav and right directory/moderation panel become slide-in
+  drawers (hamburger icon and panel icon in the top bar open them), and a bottom tab bar
+  (Home / Vibes / Squads) replaces the top nav's icon row.
+- **`md` to `lg` (tablets)**: the left sidebar becomes a static column again; the right panel
+  stays a drawer until `lg`.
+- **`lg` and up (desktop)**: the original fixed 3-column layout.
+
+The Vibes Feed player and transcript panel stack vertically below `lg` instead of sitting
+side-by-side, and the DM modal sizes itself to the viewport instead of a fixed 380×520 box.
+
 ## What's real now (no mock/placeholder logic left)
 
 - **Auth**: real Supabase Auth signup/login/logout/session.

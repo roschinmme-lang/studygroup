@@ -50,7 +50,7 @@ export default function DMModal({ currentUser, otherUser, onClose, onError }) {
       onClick={onClose}
     >
       <div
-        className="w-[380px] h-[520px] rounded-2xl flex flex-col overflow-hidden"
+        className="w-[92vw] max-w-[380px] h-[75vh] max-h-[520px] rounded-2xl flex flex-col overflow-hidden"
         style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         onClick={(e) => e.stopPropagation()}
       >

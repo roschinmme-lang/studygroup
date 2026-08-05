@@ -53,7 +53,7 @@ export default function VibesView({ vibes, onReport, activeUser, index, setIndex
   }
 
   return (
-    <div className="flex-1 flex justify-center items-start gap-5 py-6 px-4 overflow-hidden">
+    <div className="flex-1 flex flex-col lg:flex-row justify-center items-center lg:items-start gap-5 py-6 px-4 overflow-y-auto lg:overflow-hidden">
       {/* Video player */}
       <div className="flex flex-col items-center gap-3 shrink-0">
         <div
@@ -108,7 +108,7 @@ export default function VibesView({ vibes, onReport, activeUser, index, setIndex
 
       {/* Context sidebar: transcript + Q&A */}
       <div
-        className="w-[340px] shrink-0 h-[462px] rounded-2xl flex flex-col overflow-hidden"
+        className="w-[92vw] max-w-[340px] lg:w-[340px] shrink-0 h-[420px] sm:h-[462px] rounded-2xl flex flex-col overflow-hidden"
         style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid var(--border)" }}>
