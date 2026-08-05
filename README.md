@@ -26,6 +26,10 @@ Supabase backend (Postgres + Auth + Realtime).
    **Adding post images to an existing project?** Also run `supabase/migration_003_post_images.sql`
    — it adds the `image_url` column and a public `post-images` storage bucket with upload policies.
 
+   **Adding notifications to an existing project?** Also run `supabase/migration_004_notifications.sql`
+   — it adds a `notifications` table plus database triggers that fire automatically on likes,
+   comments, and messages.
+
 ## 3. Configure your local environment
 
 ```bash
@@ -93,6 +97,11 @@ side-by-side, and the DM modal sizes itself to the viewport instead of a fixed 3
 - **Send DM / Message Mentor**: real one-on-one messaging backed by a `messages` table, with a
   live-updating chat window. "Send DM" is disabled on minor profiles; "Message Mentor" opens a
   chat with whichever account has been flagged `is_mentor = true` (see setup note below).
+- **Notifications**: a bell icon in the top bar with an unread badge. You get a notification
+  when someone likes or comments on your post, or sends you a DM — created by database triggers
+  (`notify_on_like`, `notify_on_comment`, `notify_on_message`), so they fire regardless of which
+  client performed the action. Clicking a message notification opens that chat directly; "Mark
+  all read" clears the badge.
 - **Realtime**: the feed, squads, and moderation log update live via Supabase Realtime — open
   the app in two tabs (or two accounts) and post/like/comment/join in one to see it in the other
   without refreshing.

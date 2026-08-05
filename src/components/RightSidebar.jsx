@@ -3,7 +3,6 @@ import { AlertTriangle, ShieldAlert, Lock, GraduationCap, X } from "lucide-react
 import { Avatar, TierBadge } from "./Shared.jsx";
 import { MOD_SYSTEM_NOTES } from "../data/mockData.js";
 import { fetchSuggestedProfiles, fetchMentor } from "../lib/usersApi.js";
-import DMModal from "./DMModal.jsx";
 
 function ProfileCard({ profile, mentor, onOpenDM, onMentorMissing }) {
   return (
@@ -79,10 +78,9 @@ function ModerationLogEntry({ entry }) {
   );
 }
 
-export default function RightSidebar({ modLog, currentUser, onToast, mobileOpen, onClose }) {
+export default function RightSidebar({ modLog, currentUser, onToast, mobileOpen, onClose, onOpenDM }) {
   const [profiles, setProfiles] = useState([]);
   const [mentor, setMentor] = useState(null);
-  const [dmTarget, setDmTarget] = useState(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -133,7 +131,7 @@ export default function RightSidebar({ modLog, currentUser, onToast, mobileOpen,
                 key={p.id}
                 profile={p}
                 mentor={mentor}
-                onOpenDM={setDmTarget}
+                onOpenDM={onOpenDM}
                 onMentorMissing={() => onToast?.("No mentor account has been set up yet.")}
               />
             ))
@@ -171,9 +169,6 @@ export default function RightSidebar({ modLog, currentUser, onToast, mobileOpen,
         )}
       </section>
 
-      {dmTarget && currentUser && (
-        <DMModal currentUser={currentUser} otherUser={dmTarget} onClose={() => setDmTarget(null)} onError={onToast} />
-      )}
       </aside>
     </>
   );

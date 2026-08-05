@@ -1,6 +1,7 @@
 import React from "react";
 import { Sun, Moon, Search, Home, Zap, Users, LogOut, Menu, PanelRightOpen } from "lucide-react";
 import { Avatar, TierBadge } from "./Shared.jsx";
+import NotificationsBell from "./NotificationsBell.jsx";
 
 export default function TopNav({
   theme,
@@ -13,6 +14,8 @@ export default function TopNav({
   setUserMenuOpen,
   onOpenLeftMenu,
   onOpenRightPanel,
+  onOpenDM,
+  onError,
 }) {
   const navTabs = [
     { id: "feed", icon: Home, label: "Home" },
@@ -93,6 +96,8 @@ export default function TopNav({
         >
           <PanelRightOpen size={17} />
         </button>
+
+        <NotificationsBell currentUser={activeUser} onOpenDM={onOpenDM} onError={onError} />
 
         <button
           onClick={toggleTheme}

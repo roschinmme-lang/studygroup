@@ -7,6 +7,7 @@ import FeedView from "./components/FeedView.jsx";
 import VibesView from "./components/VibesView.jsx";
 import SquadsView from "./components/SquadsView.jsx";
 import AuthScreen from "./components/AuthScreen.jsx";
+import DMModal from "./components/DMModal.jsx";
 import { Toast } from "./components/Shared.jsx";
 import { VIBES, DEVICE_STRING } from "./data/mockData.js";
 import { useAuth } from "./hooks/useAuth.js";
@@ -29,6 +30,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [mobileLeftOpen, setMobileLeftOpen] = useState(false);
   const [mobileRightOpen, setMobileRightOpen] = useState(false);
+  const [dmTarget, setDmTarget] = useState(null);
 
   const showToast = useCallback((msg) => setToast(msg), []);
 
@@ -241,6 +243,8 @@ export default function App() {
               setUserMenuOpen={setUserMenuOpen}
               onOpenLeftMenu={() => setMobileLeftOpen(true)}
               onOpenRightPanel={() => setMobileRightOpen(true)}
+              onOpenDM={setDmTarget}
+              onError={showToast}
             />
 
             <div className="flex flex-1 overflow-hidden">
@@ -322,6 +326,7 @@ export default function App() {
                 onToast={showToast}
                 mobileOpen={mobileRightOpen}
                 onClose={() => setMobileRightOpen(false)}
+                onOpenDM={setDmTarget}
               />
             </div>
 
@@ -332,6 +337,10 @@ export default function App() {
                 setActiveView(v);
               }}
             />
+
+            {dmTarget && (
+              <DMModal currentUser={user} otherUser={dmTarget} onClose={() => setDmTarget(null)} onError={showToast} />
+            )}
           </>
         )}
       </div>
