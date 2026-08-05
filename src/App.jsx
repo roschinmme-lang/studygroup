@@ -118,10 +118,10 @@ export default function App() {
   );
 
   const handlePost = useCallback(
-    async (text, squadName = "Your feed") => {
+    async (text, imageUrl = null, squadName = "Your feed") => {
       if (!user || user.tier === "JHS") return;
       try {
-        await createPost({ authorId: user.id, content: text, squad: squadName });
+        await createPost({ authorId: user.id, content: text, squad: squadName, imageUrl });
         setToast("Posted.");
         refreshPosts();
       } catch (err) {
@@ -261,6 +261,7 @@ export default function App() {
                         onPost={handlePost}
                         onAddComment={handleAddComment}
                         onToggleLike={handleToggleLike}
+                        onError={showToast}
                         activeUser={user}
                         heading="Vibes feed home"
                         subheading="Posts from your squads and major"
@@ -274,6 +275,7 @@ export default function App() {
                         onPost={handlePost}
                         onAddComment={handleAddComment}
                         onToggleLike={handleToggleLike}
+                        onError={showToast}
                         activeUser={user}
                         heading="My Major \u2022 BSIT"
                         subheading="Posts and threads from students in your program"
@@ -293,6 +295,7 @@ export default function App() {
                         onPost={handlePost}
                         onAddComment={handleAddComment}
                         onToggleLike={handleToggleLike}
+                        onError={showToast}
                         activeUser={user}
                       />
                     )}

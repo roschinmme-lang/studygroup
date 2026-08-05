@@ -55,6 +55,7 @@ export default function SquadsView({
   onPost,
   onAddComment,
   onToggleLike,
+  onError,
   activeUser,
 }) {
   const [showCreate, setShowCreate] = useState(false);
@@ -92,9 +93,10 @@ export default function SquadsView({
         <FeedView
           posts={squadPosts}
           onReport={onReport}
-          onPost={(text) => onPost(text, selectedSquad.name)}
+          onPost={(text, imageUrl) => onPost(text, imageUrl, selectedSquad.name)}
           onAddComment={onAddComment}
           onToggleLike={onToggleLike}
+          onError={onError}
           activeUser={activeUser}
           heading={selectedSquad.name}
           subheading={`${selectedSquad.memberCount} member${selectedSquad.memberCount === 1 ? "" : "s"}${selectedSquad.description ? " \u00b7 " + selectedSquad.description : ""}`}

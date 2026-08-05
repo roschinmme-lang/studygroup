@@ -2,7 +2,7 @@ import { supabase } from "./supabaseClient.js";
 import { timeAgo, formatTimestamp } from "./format.js";
 
 const POST_SELECT = `
-  id, content, squad, created_at, author_id,
+  id, content, squad, created_at, author_id, image_url,
   author:profiles!posts_author_id_fkey ( name, tier, initials, color ),
   comments ( id, text, created_at, author:profiles!comments_author_id_fkey ( name ) ),
   post_likes ( user_id )
@@ -19,6 +19,7 @@ function mapPost(row, currentUserId) {
     time: timeAgo(row.created_at),
     squad: row.squad,
     content: row.content,
+    imageUrl: row.image_url,
     likes: row.post_likes?.length ?? 0,
     likedByMe: (row.post_likes ?? []).some((l) => l.user_id === currentUserId),
     commentsList: (row.comments ?? [])
@@ -37,8 +38,8 @@ export async function fetchPosts(currentUserId) {
   return (data ?? []).map((row) => mapPost(row, currentUserId));
 }
 
-export async function createPost({ authorId, content, squad = "Your feed" }) {
-  const { error } = await supabase.from("posts").insert({ author_id: authorId, content, squad });
+export async function createPost({ authorId, content, squad = "Your feed", imageUrl = null }) {
+  const { error } = await supabase.from("posts").insert({ author_id: authorId, content, squad, image_url: imageUrl });
   if (error) throw new Error(error.message);
 }
 

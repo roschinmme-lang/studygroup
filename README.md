@@ -23,6 +23,9 @@ Supabase backend (Postgres + Auth + Realtime).
    full re-run. Open **SQL Editor → New query** and run `supabase/migration_002_squads_and_messaging.sql`
    instead — it's safe to run even if some of it already exists.
 
+   **Adding post images to an existing project?** Also run `supabase/migration_003_post_images.sql`
+   — it adds the `image_url` column and a public `post-images` storage bucket with upload policies.
+
 ## 3. Configure your local environment
 
 ```bash
@@ -57,6 +60,9 @@ Open `http://localhost:5173`, sign up with a real email + password, and you're i
 
 - **Auth**: real Supabase Auth signup/login/logout/session.
 - **Posts**: stored in Postgres, created by the composer, visible to everyone signed in.
+- **Post images**: the composer's image icon uploads a real file to Supabase Storage (public
+  `post-images` bucket) and attaches it to the post. Reporting a post as severe hides the image
+  along with the rest of the post, same as text-only posts.
 - **Comments**: stored per post, added live.
 - **Likes**: tracked per user in a `post_likes` table — you can't double-like, and unliking
   actually removes your row.

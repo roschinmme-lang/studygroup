@@ -24,6 +24,7 @@ create table if not exists posts (
   content text not null,
   squad text default 'Your feed',
   quarantined boolean not null default false,
+  image_url text,
   created_at timestamptz not null default now()
 );
 
@@ -178,3 +179,23 @@ alter publication supabase_realtime add table squads, squad_members, messages;
 --
 --    update profiles set is_mentor = true where email = 'mentor@example.com';
 -- ------------------------------------------------------------------
+
+-- ------------------------------------------------------------------
+-- Post images (Supabase Storage)
+-- ------------------------------------------------------------------
+
+insert into storage.buckets (id, name, public)
+values ('post-images', 'post-images', true)
+on conflict (id) do nothing;
+
+create policy "Public read access to post images"
+  on storage.objects for select
+  using (bucket_id = 'post-images');
+
+create policy "Authenticated users can upload post images"
+  on storage.objects for insert
+  with check (bucket_id = 'post-images' and auth.role() = 'authenticated');
+
+create policy "Users can delete their own post images"
+  on storage.objects for delete
+  using (bucket_id = 'post-images' and auth.uid()::text = (storage.foldername(name))[1]);

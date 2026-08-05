@@ -1,7 +1,7 @@
 import React from "react";
 import PostCard, { Composer } from "./PostCard.jsx";
 
-export default function FeedView({ posts, onReport, onPost, onAddComment, onToggleLike, activeUser, heading, subheading, showComposer }) {
+export default function FeedView({ posts, onReport, onPost, onAddComment, onToggleLike, onError, activeUser, heading, subheading, showComposer }) {
   return (
     <div className="max-w-2xl mx-auto w-full py-5 px-4">
       <div className="mb-4">
@@ -14,7 +14,7 @@ export default function FeedView({ posts, onReport, onPost, onAddComment, onTogg
           </p>
         )}
       </div>
-      {showComposer && <Composer activeUser={activeUser} onPost={onPost} />}
+      {showComposer && <Composer activeUser={activeUser} onPost={onPost} onError={onError} />}
       {posts.length === 0 ? (
         <div className="text-sm text-center py-10" style={{ color: "var(--text-secondary)" }}>
           No posts here right now.

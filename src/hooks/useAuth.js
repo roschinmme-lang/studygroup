@@ -23,6 +23,7 @@ function mapProfile(row) {
     initials: row.initials,
     color: row.color,
     minor: row.minor,
+    isMentor: row.is_mentor,
   };
 }
 

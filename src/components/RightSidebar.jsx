@@ -11,19 +11,19 @@ function ProfileCard({ profile, mentor, onOpenDM, onMentorMissing }) {
       <Avatar initials={profile.initials} color={profile.color} size={36} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-  <span className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
-    {profile.name}
-  </span>
-  <TierBadge tier={profile.tier} />
-  {profile.is_mentor && (
-    <span
-      className="text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0"
-      style={{ background: "rgba(255,208,0,0.18)", color: "#B98F00" }}
-    >
-      <GraduationCap size={10} /> MENTOR
-    </span>
-  )}
-</div>
+          <span className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>
+            {profile.name}
+          </span>
+          <TierBadge tier={profile.tier} />
+          {profile.is_mentor && (
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0"
+              style={{ background: "rgba(255,208,0,0.18)", color: "#B98F00" }}
+            >
+              <GraduationCap size={10} /> MENTOR
+            </span>
+          )}
+        </div>
         <div className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
           {profile.school}
         </div>

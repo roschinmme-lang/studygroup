@@ -4,7 +4,8 @@ import { supabase } from "./supabaseClient.js";
 export async function fetchSuggestedProfiles(currentUserId, limit = 8) {
   const { data, error } = await supabase
     .from("profiles")
-.select("id, name, tier, school, initials, color, minor, is_mentor")    .neq("id", currentUserId)
+    .select("id, name, tier, school, initials, color, minor, is_mentor")
+    .neq("id", currentUserId)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw new Error(error.message);
