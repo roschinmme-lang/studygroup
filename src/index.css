@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --color-academic-yellow: #ffd000;
+}
+
+/* ------------------------------------------------------------
+   Academic Yellow design tokens
+   Toggled via [data-theme="light" | "dark"] on the app root
+   ------------------------------------------------------------ */
+[data-theme="light"] {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --border: #e4e6eb;
+  --text: #050505;
+  --text-secondary: #65676b;
+  --accent: #ffd000;
+  --accent-strong: #b98f00;
+}
+
+[data-theme="dark"] {
+  --bg: #111214;
+  --surface: #1a1c1e;
+  --border: #2a2d31;
+  --text: #f5f6f8;
+  --text-secondary: #969ba3;
+  --accent: #ffd000;
+  --accent-strong: #ffd000;
+}
+
+* {
+  box-sizing: border-box;
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
