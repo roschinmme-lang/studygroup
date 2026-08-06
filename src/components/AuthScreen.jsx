@@ -201,7 +201,7 @@ export default function AuthScreen({ signup, login, loginWithGoogle, theme, togg
             value={form.password}
             onChange={(e) => update("password", e.target.value)}
             required
-            minLength={6}
+            minLength={8}
             className="h-10 rounded-lg px-3 text-sm outline-none"
             style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
           />
@@ -214,7 +214,7 @@ export default function AuthScreen({ signup, login, loginWithGoogle, theme, togg
                 value={form.confirm}
                 onChange={(e) => update("confirm", e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 className="h-10 rounded-lg px-3 text-sm outline-none"
                 style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
               />

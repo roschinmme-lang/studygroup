@@ -29,6 +29,8 @@ Supabase backend (Postgres + Auth + Realtime).
    - `supabase/migration_007_google_oauth.sql` — see step 3
    - `supabase/migration_008_real_vibes.sql` — the `vibes`/`vibe_comments` tables and a
      `vibe-videos` storage bucket for the Vibes Feed
+   - `supabase/migration_009_security_hardening.sql` — **run this regardless**, even if you
+     ran everything above already. See the Security section below for what it fixes.
 
 ## 3. Add "Continue with Google"
 
@@ -194,6 +196,36 @@ src/
     DMModal.jsx                   real-time direct message thread
     Shared.jsx                    Avatar, TierBadge, Toast, ReportMenu
 ```
+
+## Security
+
+Run `supabase/migration_009_security_hardening.sql` (included in `schema.sql` for fresh
+installs) — it fixes four real issues found in review:
+
+1. **Posts/vibes "quarantine" access was too broad.** The old RLS policy checked *who* was
+   making a request, not *what* they were changing — any signed-in user could rewrite someone
+   else's post content, not just flip the quarantine flag. Fixed with a single narrow database
+   function (`report_and_quarantine`) that only ever does that one thing, called via RPC instead
+   of a direct client `UPDATE`.
+2. **The moderation log could be forged.** Any signed-in user could `INSERT` arbitrary fake
+   entries into `mod_log` directly. Fixed the same way — only the RPC above can write to it now,
+   and only alongside an actual quarantine.
+3. **Email addresses were readable by any signed-in user** via the API, even though the UI never
+   showed them. Fixed by revoking column-level access; your own email now comes from the Auth
+   session, not the `profiles` table.
+4. **Storage buckets had no server-side file-size/type limits** — the 8MB/50MB checks only
+   existed in the browser and could be bypassed by calling the Storage API directly. Fixed by
+   setting limits on the buckets themselves.
+
+`vercel.json` also adds baseline security headers (`X-Frame-Options`, `X-Content-Type-Options`,
+`Referrer-Policy`, `Permissions-Policy`) to the deployed site.
+
+**Known limitation, not fixed by this migration:** there's no rate limiting on posting,
+commenting, liking, or messaging — a signed-in user could still spam actions quickly by scripting
+requests. Supabase's own Auth rate limits (Dashboard → Authentication → Rate Limits) cover
+signup/login abuse, but per-action throttling on the app's own tables would need an Edge Function
+or similar server-side layer — a bigger addition than a SQL migration. Worth building if this
+opens up beyond a small trusted group.
 
 ## Deploying
 

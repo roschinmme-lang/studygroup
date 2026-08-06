@@ -13,9 +13,10 @@ import { Toast } from "./components/Shared.jsx";
 import { DEVICE_STRING } from "./data/mockData.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { supabase } from "./lib/supabaseClient.js";
-import { fetchPosts, createPost, addComment, toggleLike, quarantinePost, fetchModLog, insertModLogEntry } from "./lib/postsApi.js";
+import { fetchPosts, createPost, addComment, toggleLike } from "./lib/postsApi.js";
 import { fetchSquads, joinSquad, leaveSquad, createSquad } from "./lib/squadsApi.js";
-import { fetchVibes, createVibe, quarantineVibe, addVibeComment } from "./lib/vibesApi.js";
+import { fetchVibes, createVibe, addVibeComment } from "./lib/vibesApi.js";
+import { fetchModLog, reportAndQuarantine } from "./lib/moderationApi.js";
 
 export default function App() {
   const { user, signup, login, loginWithGoogle, completeOnboarding, logout, loading: authLoading } = useAuth();
@@ -118,17 +119,16 @@ export default function App() {
       if (reason.severity === "severe") {
         try {
           const snippetSource = target.content || target.title || "";
-          await insertModLogEntry({
+          await reportAndQuarantine({
+            targetType: sourceType,
+            targetId: target.id,
             reasonLabel: reason.label,
             targetSnippet: snippetSource.slice(0, 60) + (snippetSource.length > 60 ? "..." : ""),
             device: DEVICE_STRING,
-            lockout: "Content permanently quarantined \u2022 kill-switch engaged",
           });
           if (sourceType === "post") {
-            await quarantinePost(target.id);
             refreshPosts();
           } else if (sourceType === "vibe") {
-            await quarantineVibe(target.id);
             refreshVibes();
             setVibeIndex(0);
           }

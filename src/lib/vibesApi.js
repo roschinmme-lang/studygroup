@@ -43,11 +43,6 @@ export async function createVibe({ authorId, title, subject, videoUrl }) {
   if (error) throw new Error(error.message);
 }
 
-export async function quarantineVibe(vibeId) {
-  const { error } = await supabase.from("vibes").update({ quarantined: true }).eq("id", vibeId);
-  if (error) throw new Error(error.message);
-}
-
 export async function addVibeComment({ vibeId, authorId, text }) {
   const { error } = await supabase.from("vibe_comments").insert({ vibe_id: vibeId, author_id: authorId, text });
   if (error) throw new Error(error.message);

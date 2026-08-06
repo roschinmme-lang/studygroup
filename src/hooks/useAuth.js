@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient.js";
 import { TIER_META } from "../data/mockData.js";
 
+// Deliberately excludes `email` — that column's SELECT access is revoked
+// for the `authenticated` role (see migration 009) so no one can read
+// another user's email via the profiles table. Your own email still
+// comes from the Supabase Auth session itself (session.user.email),
+// not from this table.
+const PROFILE_COLUMNS = "id, name, tier, tier_label, school, initials, color, minor, is_mentor, onboarded";
+
 function initials(name) {
   return name
     .trim()
@@ -12,11 +19,11 @@ function initials(name) {
     .toUpperCase();
 }
 
-function mapProfile(row) {
+function mapProfile(row, email) {
   return {
     id: row.id,
     name: row.name,
-    email: row.email,
+    email,
     tier: row.tier,
     tierLabel: row.tier_label,
     school: row.school,
@@ -32,8 +39,8 @@ export function useAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async (userId) => {
-    const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
+  const loadProfile = useCallback(async (userId, email) => {
+    const { data, error } = await supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", userId).single();
     if (error) {
       // Auth user exists but has no profile row yet — can happen for a
       // moment right after signup before the trigger commits. Not treated
@@ -41,7 +48,7 @@ export function useAuth() {
       setUser(null);
       return;
     }
-    setUser(mapProfile(data));
+    setUser(mapProfile(data, email));
   }, []);
 
   useEffect(() => {
@@ -49,14 +56,14 @@ export function useAuth() {
 
     async function init() {
       const { data } = await supabase.auth.getSession();
-      if (data.session?.user) await loadProfile(data.session.user.id);
+      if (data.session?.user) await loadProfile(data.session.user.id, data.session.user.email);
       if (mounted) setLoading(false);
     }
     init();
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        await loadProfile(session.user.id);
+        await loadProfile(session.user.id, session.user.email);
       } else {
         setUser(null);
       }
@@ -81,6 +88,9 @@ export function useAuth() {
       if (!meta) throw new Error("Please select a valid academic tier.");
       if (!/^[^\s@]+@gmail\.com$/.test(cleanEmail)) {
         throw new Error("Please sign up with a real Gmail address (must end in @gmail.com).");
+      }
+      if (password.length < 8) {
+        throw new Error("Password must be at least 8 characters.");
       }
 
       const { data, error } = await supabase.auth.signUp({
@@ -116,7 +126,7 @@ export function useAuth() {
       }
 
       if (data.session) {
-        await loadProfile(data.user.id);
+        await loadProfile(data.user.id, data.user.email);
         return { requiresConfirmation: false };
       }
 
@@ -134,7 +144,7 @@ export function useAuth() {
         }
         throw new Error(error.message);
       }
-      await loadProfile(data.user.id);
+      await loadProfile(data.user.id, data.user.email);
     },
     [loadProfile]
   );
@@ -173,11 +183,11 @@ export function useAuth() {
           onboarded: true,
         })
         .eq("id", user.id)
-        .select()
+        .select(PROFILE_COLUMNS)
         .single();
 
       if (error) throw new Error(error.message);
-      setUser(mapProfile(data));
+      setUser(mapProfile(data, user.email));
     },
     [user]
   );
