@@ -24,6 +24,7 @@ function mapProfile(row) {
     color: row.color,
     minor: row.minor,
     isMentor: row.is_mentor,
+    onboarded: row.onboarded,
   };
 }
 
@@ -34,7 +35,9 @@ export function useAuth() {
   const loadProfile = useCallback(async (userId) => {
     const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
     if (error) {
-      // Auth user exists but has no profile row yet (e.g. signup got interrupted).
+      // Auth user exists but has no profile row yet — can happen for a
+      // moment right after signup before the trigger commits. Not treated
+      // as fatal; the caller can retry via onAuthStateChange.
       setUser(null);
       return;
     }
@@ -65,55 +68,124 @@ export function useAuth() {
     };
   }, [loadProfile]);
 
-  const signup = useCallback(async ({ name, email, password, tier, school }) => {
-    const { data, error } = await supabase.auth.signUp({ email: email.trim().toLowerCase(), password });
-    if (error) {
-      if (/already registered|already exists/i.test(error.message)) {
-        throw new Error("An account with this email already exists. Each student can only have one Studygroup account — please log in instead.");
+  /**
+   * Returns { requiresConfirmation: false } if the account is created and
+   * logged in immediately (email confirmation off), or
+   * { requiresConfirmation: true, email } if a confirmation link was sent
+   * and the account isn't usable yet.
+   */
+  const signup = useCallback(
+    async ({ name, email, password, tier, school }) => {
+      const cleanEmail = email.trim().toLowerCase();
+      const meta = TIER_META[tier];
+      if (!meta) throw new Error("Please select a valid academic tier.");
+      if (!/^[^\s@]+@gmail\.com$/.test(cleanEmail)) {
+        throw new Error("Please sign up with a real Gmail address (must end in @gmail.com).");
       }
-      throw new Error(error.message);
-    }
-    if (!data.user) {
-      throw new Error("Signup succeeded but no user was returned. Check that email confirmations are disabled in your Supabase project for local testing.");
-    }
-    if (!data.session) {
-      throw new Error("Account created, but email confirmation is required before you can log in. Disable \"Confirm email\" in Supabase (Authentication → Providers → Email) for local testing, or check your inbox to confirm.");
-    }
 
-    const meta = TIER_META[tier];
-    const { data: profileRow, error: profileError } = await supabase
-      .from("profiles")
-      .insert({
-        id: data.user.id,
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        tier,
-        tier_label: meta.tierLabel,
-        school: school.trim() || "Not specified",
-        initials: initials(name),
-        color: meta.color,
-        minor: meta.minor,
-      })
-      .select()
-      .single();
+      const { data, error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          // Read by the handle_new_user() database trigger to create the
+          // profiles row — there's no session yet to insert as ourselves
+          // when email confirmation is required.
+          data: {
+            name: name.trim(),
+            tier,
+            tier_label: meta.tierLabel,
+            school: school.trim() || "Not specified",
+            initials: initials(name),
+            color: meta.color,
+            minor: meta.minor,
+          },
+          emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+        },
+      });
 
-    if (profileError) throw new Error(profileError.message);
+      if (error) {
+        if (/already registered|already exists/i.test(error.message)) {
+          throw new Error(
+            "An account with this email already exists. Each student can only have one Studygroup account — please log in instead."
+          );
+        }
+        throw new Error(error.message);
+      }
+      if (!data.user) {
+        throw new Error("Signup failed unexpectedly. Please try again.");
+      }
 
-    const mapped = mapProfile(profileRow);
-    setUser(mapped);
-    return mapped;
+      if (data.session) {
+        await loadProfile(data.user.id);
+        return { requiresConfirmation: false };
+      }
+
+      return { requiresConfirmation: true, email: cleanEmail };
+    },
+    [loadProfile]
+  );
+
+  const login = useCallback(
+    async (email, password) => {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+      if (error) {
+        if (/email not confirmed/i.test(error.message)) {
+          throw new Error("Please confirm your email first — check your inbox for the confirmation link we sent.");
+        }
+        throw new Error(error.message);
+      }
+      await loadProfile(data.user.id);
+    },
+    [loadProfile]
+  );
+
+  const loginWithGoogle = useCallback(async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+      },
+    });
+    if (error) throw new Error(error.message);
+    // Supabase redirects the whole page to Google, then back — there's
+    // nothing further to do here, onAuthStateChange picks up the session
+    // once the browser returns. If the chosen account isn't @gmail.com,
+    // the database trigger rejects it and the person is bounced back
+    // with an error instead of a session.
   }, []);
 
-  const login = useCallback(async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-    if (error) throw new Error(error.message);
-    await loadProfile(data.user.id);
-  }, [loadProfile]);
+  const completeOnboarding = useCallback(
+    async ({ name, tier, school }) => {
+      if (!user) return;
+      const meta = TIER_META[tier];
+      if (!meta) throw new Error("Please select a valid academic tier.");
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({
+          name: name.trim(),
+          tier,
+          tier_label: meta.tierLabel,
+          school: school.trim() || "Not specified",
+          initials: initials(name),
+          color: meta.color,
+          minor: meta.minor,
+          onboarded: true,
+        })
+        .eq("id", user.id)
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+      setUser(mapProfile(data));
+    },
+    [user]
+  );
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
   }, []);
 
-  return { user, signup, login, logout, loading };
+  return { user, signup, login, loginWithGoogle, completeOnboarding, logout, loading };
 }

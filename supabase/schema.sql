@@ -15,6 +15,7 @@ create table if not exists profiles (
   color text,
   minor boolean not null default false,
   is_mentor boolean not null default false,
+  onboarded boolean not null default true,
   created_at timestamptz not null default now()
 );
 
@@ -274,3 +275,51 @@ create trigger trg_notify_on_message
   for each row execute function notify_on_message();
 
 alter publication supabase_realtime add table notifications;
+
+-- ------------------------------------------------------------------
+-- Auto-create a profile row on signup (works whether or not email
+-- confirmation is required, since there's no session yet at signup
+-- time when confirmation is on). See migration_005 for the full
+-- explanation.
+-- ------------------------------------------------------------------
+
+create or replace function public.handle_new_user()
+returns trigger as $$
+declare
+  has_tier boolean;
+  derived_name text;
+begin
+  if new.email !~* '^[^@\s]+@gmail\.com$' then
+    raise exception 'Only gmail.com addresses can sign up for Studygroup.';
+  end if;
+
+  has_tier := (new.raw_user_meta_data ? 'tier');
+  derived_name := coalesce(
+    new.raw_user_meta_data->>'name',
+    new.raw_user_meta_data->>'full_name',
+    split_part(new.email, '@', 1)
+  );
+
+  insert into public.profiles (id, name, email, tier, tier_label, school, initials, color, minor, is_mentor, onboarded)
+  values (
+    new.id,
+    derived_name,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'tier', 'UNI'),
+    coalesce(new.raw_user_meta_data->>'tier_label', 'University'),
+    coalesce(new.raw_user_meta_data->>'school', 'Not specified'),
+    coalesce(new.raw_user_meta_data->>'initials', upper(left(derived_name, 2))),
+    coalesce(new.raw_user_meta_data->>'color', '#FFD000'),
+    coalesce((new.raw_user_meta_data->>'minor')::boolean, false),
+    false,
+    has_tier
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();

@@ -6,31 +6,53 @@ Supabase backend (Postgres + Auth + Realtime).
 ## 1. Create a Supabase project
 
 1. Go to [supabase.com](https://supabase.com), sign in, and create a new project.
-2. Once it's ready, go to **Authentication → Providers → Email** and turn **off** "Confirm email".
-   This lets signup log people in immediately, which is what this app expects. (Turn it back on
-   later if you want real email verification before going live.)
-3. Go to **Settings → API** and copy your **Project URL** and **anon public key**.
+2. Go to **Settings → API** and copy your **Project URL** and **anon public key**.
 
 ## 2. Run the database schema
 
 1. In your Supabase project, open **SQL Editor → New query**.
 2. Paste in the contents of `supabase/schema.sql` from this project and click **Run**.
    This creates the `profiles`, `posts`, `comments`, `post_likes`, `mod_log`, `squads`,
-   `squad_members`, and `messages` tables, sets up Row Level Security policies, seeds three
-   default squads, and turns on Realtime.
+   `squad_members`, `messages`, and `notifications` tables, sets up Row Level Security policies,
+   the profile-creation trigger, seeds three default squads, and turns on Realtime.
 
-   **Already ran the old version of schema.sql before?** You only need the new tables, not a
-   full re-run. Open **SQL Editor → New query** and run `supabase/migration_002_squads_and_messaging.sql`
-   instead — it's safe to run even if some of it already exists.
+   **Already ran the old version of schema.sql before?** You only need the new pieces, not a
+   full re-run:
+   - `supabase/migration_002_squads_and_messaging.sql` — squads, squad membership, DMs
+   - `supabase/migration_003_post_images.sql` — the `image_url` column and a public
+     `post-images` storage bucket
+   - `supabase/migration_004_notifications.sql` — the `notifications` table and its triggers
+   - `supabase/migration_005_email_confirmation.sql` — **required**, even if you ran everything
+     above already. It adds the trigger that creates a profile row automatically on signup,
+     which is needed once real email confirmation is on (see step 3).
 
-   **Adding post images to an existing project?** Also run `supabase/migration_003_post_images.sql`
-   — it adds the `image_url` column and a public `post-images` storage bucket with upload policies.
+## 3. Add "Continue with Google"
 
-   **Adding notifications to an existing project?** Also run `supabase/migration_004_notifications.sql`
-   — it adds a `notifications` table plus database triggers that fire automatically on likes,
-   comments, and messages.
+Google OAuth verifies the person actually owns the account they sign in with — no confirmation
+email, no relying on the domain alone. This is the recommended path for real testers.
 
-## 3. Configure your local environment
+1. Run `supabase/migration_007_google_oauth.sql` in the SQL Editor. This adds an `onboarded`
+   flag (Google doesn't give us academic tier or school, so first-time Google sign-ins land on
+   a short in-app step to fill those in) and updates the signup trigger to still require a
+   `gmail.com` address either way.
+2. **Google Cloud Console** ([console.cloud.google.com](https://console.cloud.google.com)):
+   - Create/select a project → **APIs & Services → Credentials**
+   - Create an **OAuth 2.0 Client ID** (Application type: Web application)
+   - Leave this tab open — you'll paste a redirect URI here in the next step
+3. **Supabase Dashboard → Authentication → Providers → Google**:
+   - Toggle it on
+   - Copy the **Redirect URL** Supabase shows you → paste it into the Google Cloud OAuth
+     client's **Authorized redirect URIs** (step 2) → save on the Google side
+   - Paste your Google **Client ID** and **Client Secret** into Supabase → Save
+4. **Supabase Dashboard → Authentication → URL Configuration**:
+   - **Site URL**: your production URL (e.g. `https://studygroup-xyz.vercel.app`)
+   - **Redirect URLs**: add both `http://localhost:5173` and your production URL
+
+Email/password signup (from the earlier steps) still works as a fallback and is still
+restricted to `@gmail.com` — you don't have to run `migration_006` separately if you're doing
+this migration, it's included.
+
+## 4. Configure your local environment
 
 ```bash
 cp .env.example .env
@@ -43,7 +65,7 @@ VITE_SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR-ANON-PUBLIC-KEY
 ```
 
-## 4. Install and run
+## 5. Install and run
 
 ```bash
 npm install
@@ -54,10 +76,15 @@ Open `http://localhost:5173`, sign up with a real email + password, and you're i
 
 ## Accounts
 
-- Every visitor signs up for a real account through Supabase Auth: name, email, password, school,
-  and one academic tier (JHS / SHS / UNI).
-- **One account per email** is enforced two ways: Supabase Auth won't let two accounts share an
-  email, and the app surfaces that as a clear error on signup.
+- **"Continue with Google"** (recommended, once step 3 above is set up): one click, Google
+  verifies the person owns the account, no password to remember. First-time Google sign-ins hit
+  a short onboarding step to pick a school and academic tier, since Google doesn't provide that.
+- **Email/password** still works as a fallback: name, email, password, school, and one academic
+  tier (JHS / SHS / UNI), all collected up front.
+- **One account per email** either way — Supabase Auth won't let two accounts share an email,
+  and the app surfaces that as a clear error on signup.
+- **Gmail addresses only**: signup rejects anything that isn't `@gmail.com`, enforced both
+  client-side and in the database, for both login methods.
 - Sessions persist across refreshes (Supabase handles this) and you log out from the avatar menu.
 
 ## Mobile / responsive
@@ -144,7 +171,8 @@ src/
   hooks/useAuth.js             signup / login / logout against Supabase Auth + profiles table
   data/mockData.js             tier metadata, Vibes seed clips, report reasons
   components/
-    AuthScreen.jsx              login / signup screen
+    AuthScreen.jsx              login / signup screen, Google OAuth button
+    OnboardingScreen.jsx         first-time Google sign-in: pick tier and school
     TopNav.jsx                   fixed top bar: logo, search, tabs, theme toggle, logout menu
     LeftSidebar.jsx              pinned nav + your real joined squads
     RightSidebar.jsx             real student profiles, system warnings, moderation log, DMs

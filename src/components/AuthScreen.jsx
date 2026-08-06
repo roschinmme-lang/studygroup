@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { GraduationCap, Sun, Moon, ShieldCheck } from "lucide-react";
+import { GraduationCap, Sun, Moon, ShieldCheck, MailCheck } from "lucide-react";
 import { TIER_META } from "../data/mockData.js";
 
 const TIER_OPTIONS = [
@@ -8,14 +8,39 @@ const TIER_OPTIONS = [
   { id: "UNI", label: "University Undergrad" },
 ];
 
-export default function AuthScreen({ signup, login, theme, toggleTheme }) {
+function GoogleIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.9 5.1 29.7 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.7-.4-3.5z" />
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.8 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.9 5.1 29.7 3 24 3 16.3 3 9.6 7.3 6.3 14.7z" />
+      <path fill="#4CAF50" d="M24 45c5.6 0 10.7-2.1 14.5-5.6l-6.7-5.7C29.6 35.6 27 36.5 24 36.5c-5.3 0-9.7-3.4-11.3-8.1l-6.6 5.1C9.5 40.6 16.2 45 24 45z" />
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.4l6.7 5.7C41.5 36 45 30.5 45 24c0-1.4-.1-2.7-.4-3.5z" />
+    </svg>
+  );
+}
+
+export default function AuthScreen({ signup, login, loginWithGoogle, theme, toggleTheme }) {
   const [mode, setMode] = useState("login"); // "login" | "signup"
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "", tier: "UNI", school: "" });
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState(null);
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  async function handleGoogle() {
+    setError(null);
+    setGoogleSubmitting(true);
+    try {
+      await loginWithGoogle();
+      // Browser navigates away to Google here — nothing else to do.
+    } catch (err) {
+      setError(err.message);
+      setGoogleSubmitting(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -28,13 +53,16 @@ export default function AuthScreen({ signup, login, theme, toggleTheme }) {
     setSubmitting(true);
     try {
       if (mode === "signup") {
-        await signup({
+        const result = await signup({
           name: form.name,
           email: form.email,
           password: form.password,
           tier: form.tier,
           school: form.school,
         });
+        if (result?.requiresConfirmation) {
+          setPendingEmail(result.email);
+        }
       } else {
         await login(form.email, form.password);
       }
@@ -43,6 +71,42 @@ export default function AuthScreen({ signup, login, theme, toggleTheme }) {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (pendingEmail) {
+    return (
+      <div className="w-full h-full flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
+        <div
+          className="w-full max-w-md rounded-2xl p-6 text-center"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        >
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{ background: "var(--accent)" }}
+          >
+            <MailCheck size={22} color="#050505" />
+          </div>
+          <h2 className="text-lg font-extrabold mb-2" style={{ color: "var(--text)" }}>
+            Check your email
+          </h2>
+          <p className="text-sm mb-5" style={{ color: "var(--text-secondary)" }}>
+            We sent a confirmation link to <span style={{ color: "var(--text)", fontWeight: 600 }}>{pendingEmail}</span>.
+            Click it, then come back and log in below.
+          </p>
+          <button
+            onClick={() => {
+              setPendingEmail(null);
+              setMode("login");
+              setForm((f) => ({ ...f, password: "", confirm: "" }));
+            }}
+            className="h-10 rounded-lg text-sm font-bold w-full"
+            style={{ background: "var(--accent)", color: "#050505" }}
+          >
+            Back to log in
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -75,6 +139,24 @@ export default function AuthScreen({ signup, login, theme, toggleTheme }) {
           {mode === "login" ? "Log in to your account" : "Create your account"}
         </p>
 
+        <button
+          type="button"
+          onClick={handleGoogle}
+          disabled={googleSubmitting}
+          className="w-full h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 mb-4 transition-opacity"
+          style={{ background: "#fff", color: "#050505", border: "1px solid var(--border)", opacity: googleSubmitting ? 0.6 : 1 }}
+        >
+          <GoogleIcon /> {googleSubmitting ? "Redirecting..." : "Continue with Google"}
+        </button>
+
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+          <span className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
+            or use email
+          </span>
+          <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+        </div>
+
         <div className="flex mb-5 rounded-full p-1" style={{ background: "var(--bg)" }}>
           {["login", "signup"].map((m) => (
             <button
@@ -105,7 +187,7 @@ export default function AuthScreen({ signup, login, theme, toggleTheme }) {
 
           <input
             type="email"
-            placeholder="Email address"
+            placeholder={mode === "signup" ? "Gmail address (you@gmail.com)" : "Email address"}
             value={form.email}
             onChange={(e) => update("email", e.target.value)}
             required
@@ -187,7 +269,7 @@ export default function AuthScreen({ signup, login, theme, toggleTheme }) {
         </form>
 
         <div className="flex items-center gap-1.5 text-[11px] mt-4" style={{ color: "var(--text-secondary)" }}>
-          <ShieldCheck size={12} /> One account per email, backed by Supabase Auth.
+          <ShieldCheck size={12} /> One account per email. Google sign-in verifies you own the account — no confirmation link needed.
         </div>
       </div>
     </div>

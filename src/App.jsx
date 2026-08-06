@@ -7,6 +7,7 @@ import FeedView from "./components/FeedView.jsx";
 import VibesView from "./components/VibesView.jsx";
 import SquadsView from "./components/SquadsView.jsx";
 import AuthScreen from "./components/AuthScreen.jsx";
+import OnboardingScreen from "./components/OnboardingScreen.jsx";
 import DMModal from "./components/DMModal.jsx";
 import { Toast } from "./components/Shared.jsx";
 import { VIBES, DEVICE_STRING } from "./data/mockData.js";
@@ -16,7 +17,7 @@ import { fetchPosts, createPost, addComment, toggleLike, quarantinePost, fetchMo
 import { fetchSquads, joinSquad, leaveSquad, createSquad } from "./lib/squadsApi.js";
 
 export default function App() {
-  const { user, signup, login, logout, loading: authLoading } = useAuth();
+  const { user, signup, login, loginWithGoogle, completeOnboarding, logout, loading: authLoading } = useAuth();
 
   const [theme, setTheme] = useState("light");
   const [activeView, setActiveView] = useState("feed");
@@ -226,7 +227,9 @@ export default function App() {
             Loading...
           </div>
         ) : !user ? (
-          <AuthScreen signup={signup} login={login} theme={theme} toggleTheme={toggleTheme} />
+          <AuthScreen signup={signup} login={login} loginWithGoogle={loginWithGoogle} theme={theme} toggleTheme={toggleTheme} />
+        ) : !user.onboarded ? (
+          <OnboardingScreen user={user} completeOnboarding={completeOnboarding} logout={logout} theme={theme} toggleTheme={toggleTheme} />
         ) : (
           <>
             <TopNav
