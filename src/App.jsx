@@ -10,11 +10,12 @@ import AuthScreen from "./components/AuthScreen.jsx";
 import OnboardingScreen from "./components/OnboardingScreen.jsx";
 import DMModal from "./components/DMModal.jsx";
 import { Toast } from "./components/Shared.jsx";
-import { VIBES, DEVICE_STRING } from "./data/mockData.js";
+import { DEVICE_STRING } from "./data/mockData.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { supabase } from "./lib/supabaseClient.js";
 import { fetchPosts, createPost, addComment, toggleLike, quarantinePost, fetchModLog, insertModLogEntry } from "./lib/postsApi.js";
 import { fetchSquads, joinSquad, leaveSquad, createSquad } from "./lib/squadsApi.js";
+import { fetchVibes, createVibe, quarantineVibe, addVibeComment } from "./lib/vibesApi.js";
 
 export default function App() {
   const { user, signup, login, loginWithGoogle, completeOnboarding, logout, loading: authLoading } = useAuth();
@@ -25,6 +26,7 @@ export default function App() {
   const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [vibeIndex, setVibeIndex] = useState(0);
+  const [vibes, setVibes] = useState([]);
   const [modLog, setModLog] = useState([]);
   const [squads, setSquads] = useState([]);
   const [selectedSquadId, setSelectedSquadId] = useState(null);
@@ -64,6 +66,16 @@ export default function App() {
     }
   }, [user]);
 
+  const refreshVibes = useCallback(async () => {
+    if (!user) return;
+    try {
+      const rows = await fetchVibes();
+      setVibes(rows);
+    } catch (err) {
+      setToast(err.message);
+    }
+  }, [user]);
+
   // Initial load once a user is signed in, plus realtime subscriptions so
   // the feed, squads, and moderation log update live across tabs/users.
   useEffect(() => {
@@ -71,11 +83,12 @@ export default function App() {
       setPosts([]);
       setModLog([]);
       setSquads([]);
+      setVibes([]);
       return;
     }
 
     setPostsLoading(true);
-    Promise.all([refreshPosts(), refreshModLog(), refreshSquads()]).finally(() => setPostsLoading(false));
+    Promise.all([refreshPosts(), refreshModLog(), refreshSquads(), refreshVibes()]).finally(() => setPostsLoading(false));
 
     const channel = supabase
       .channel("public:studygroup")
@@ -85,12 +98,14 @@ export default function App() {
       .on("postgres_changes", { event: "*", schema: "public", table: "mod_log" }, () => refreshModLog())
       .on("postgres_changes", { event: "*", schema: "public", table: "squads" }, () => refreshSquads())
       .on("postgres_changes", { event: "*", schema: "public", table: "squad_members" }, () => refreshSquads())
+      .on("postgres_changes", { event: "*", schema: "public", table: "vibes" }, () => refreshVibes())
+      .on("postgres_changes", { event: "*", schema: "public", table: "vibe_comments" }, () => refreshVibes())
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, refreshPosts, refreshModLog, refreshSquads]);
+  }, [user, refreshPosts, refreshModLog, refreshSquads, refreshVibes]);
 
   useEffect(() => {
     if (!toast) return;
@@ -102,15 +117,20 @@ export default function App() {
     async (target, reason, sourceType) => {
       if (reason.severity === "severe") {
         try {
+          const snippetSource = target.content || target.title || "";
           await insertModLogEntry({
             reasonLabel: reason.label,
-            targetSnippet: (target.content || "").slice(0, 60) + ((target.content || "").length > 60 ? "..." : ""),
+            targetSnippet: snippetSource.slice(0, 60) + (snippetSource.length > 60 ? "..." : ""),
             device: DEVICE_STRING,
             lockout: "Content permanently quarantined \u2022 kill-switch engaged",
           });
           if (sourceType === "post") {
             await quarantinePost(target.id);
             refreshPosts();
+          } else if (sourceType === "vibe") {
+            await quarantineVibe(target.id);
+            refreshVibes();
+            setVibeIndex(0);
           }
           setToast("Post quarantined. Moderation notified instantly.");
         } catch (err) {
@@ -120,7 +140,7 @@ export default function App() {
         setToast("Report submitted for review.");
       }
     },
-    [refreshPosts]
+    [refreshPosts, refreshVibes]
   );
 
   const handlePost = useCallback(
@@ -213,6 +233,34 @@ export default function App() {
     setSelectedSquadId(squadId);
     setActiveView("squads");
   }, []);
+
+  const handlePostVibe = useCallback(
+    async ({ title, subject, videoUrl }) => {
+      if (!user || user.tier === "JHS") return;
+      try {
+        await createVibe({ authorId: user.id, title, subject, videoUrl });
+        setToast("Reel posted.");
+        refreshVibes();
+      } catch (err) {
+        setToast(err.message);
+        throw err;
+      }
+    },
+    [user, refreshVibes]
+  );
+
+  const handleAddVibeComment = useCallback(
+    async (vibeId, text) => {
+      if (!user) return;
+      try {
+        await addVibeComment({ vibeId, authorId: user.id, text });
+        refreshVibes();
+      } catch (err) {
+        setToast(err.message);
+      }
+    },
+    [user, refreshVibes]
+  );
 
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
 
@@ -317,7 +365,16 @@ export default function App() {
                       />
                     )}
                     {activeView === "vibes" && (
-                      <VibesView vibes={VIBES} onReport={handleReport} activeUser={user} index={vibeIndex} setIndex={setVibeIndex} />
+                      <VibesView
+                        vibes={vibes}
+                        onReport={handleReport}
+                        onPost={handlePostVibe}
+                        onAddComment={handleAddVibeComment}
+                        onError={showToast}
+                        activeUser={user}
+                        index={vibeIndex}
+                        setIndex={setVibeIndex}
+                      />
                     )}
                   </>
                 )}

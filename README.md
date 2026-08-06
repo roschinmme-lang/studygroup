@@ -13,18 +13,22 @@ Supabase backend (Postgres + Auth + Realtime).
 1. In your Supabase project, open **SQL Editor → New query**.
 2. Paste in the contents of `supabase/schema.sql` from this project and click **Run**.
    This creates the `profiles`, `posts`, `comments`, `post_likes`, `mod_log`, `squads`,
-   `squad_members`, `messages`, and `notifications` tables, sets up Row Level Security policies,
-   the profile-creation trigger, seeds three default squads, and turns on Realtime.
+   `squad_members`, `messages`, `notifications`, `vibes`, and `vibe_comments` tables, sets up Row
+   Level Security policies, the profile-creation trigger, storage buckets for images and videos,
+   seeds three default squads, and turns on Realtime.
 
-   **Already ran the old version of schema.sql before?** You only need the new pieces, not a
+   **Already ran an older version of schema.sql before?** You only need the new pieces, not a
    full re-run:
    - `supabase/migration_002_squads_and_messaging.sql` — squads, squad membership, DMs
    - `supabase/migration_003_post_images.sql` — the `image_url` column and a public
      `post-images` storage bucket
    - `supabase/migration_004_notifications.sql` — the `notifications` table and its triggers
-   - `supabase/migration_005_email_confirmation.sql` — **required**, even if you ran everything
-     above already. It adds the trigger that creates a profile row automatically on signup,
-     which is needed once real email confirmation is on (see step 3).
+   - `supabase/migration_005_email_confirmation.sql` — the trigger that creates a profile row
+     automatically on signup (superseded by migration 007 below if you're doing Google sign-in)
+   - `supabase/migration_006_gmail_only_signup.sql` — restricts signup to `@gmail.com` addresses
+   - `supabase/migration_007_google_oauth.sql` — see step 3
+   - `supabase/migration_008_real_vibes.sql` — the `vibes`/`vibe_comments` tables and a
+     `vibe-videos` storage bucket for the Vibes Feed
 
 ## 3. Add "Continue with Google"
 
@@ -98,7 +102,7 @@ The layout adapts across three breakpoints:
   stays a drawer until `lg`.
 - **`lg` and up (desktop)**: the original fixed 3-column layout.
 
-The Vibes Feed player and transcript panel stack vertically below `lg` instead of sitting
+The Vibes Feed player and Q&A panel stack vertically below `lg` instead of sitting
 side-by-side, and the DM modal sizes itself to the viewport instead of a fixed 380×520 box.
 
 ## What's real now (no mock/placeholder logic left)
@@ -115,6 +119,12 @@ side-by-side, and the DM modal sizes itself to the viewport instead of a fixed 3
   Violence/Gore" sets `quarantined = true` on that row in the database (so it's gone for
   everyone, not just your browser) and writes a timestamped entry to the `mod_log` table, shown
   live in the Moderation Activity Center.
+- **Vibes Feed**: "Post a Reel" uploads a real video file to Supabase Storage (public
+  `vibe-videos` bucket, 50MB cap) and creates a real row in the `vibes` table. The Q&A thread is
+  backed by `vibe_comments` — real, persisted questions, not mock Q&A pairs. Reporting a clip as
+  severe quarantines it in the database the same way a post does. The old "auto-caption
+  transcript" feature was removed rather than kept as a placeholder — there's no real
+  transcription pipeline behind it.
 - **Student profiles sidebar**: shows real signed-up accounts (excluding yourself), not a
   seeded list. Empty until other people sign up.
 - **Study Squads**: real squads stored in `squads`/`squad_members`. You can create a squad,
@@ -147,9 +157,8 @@ Until this is done, clicking "Message Mentor" shows a toast saying no mentor is 
 
 ## What's still mock/local (by design, for this prototype)
 
-- **Vibes Feed** clips are static seed data (`src/data/mockData.js`), not stored in the database.
-  Reporting a clip as severe still writes a real `mod_log` entry, but the clip itself just
-  disappears from your local session rather than being deleted from a real videos table.
+- Nothing left in this category — Vibes was the last piece still using mock/seed data. Every
+  feature listed above is backed by real Supabase tables now.
 
 ## Project structure
 
@@ -165,6 +174,8 @@ src/
     supabaseClient.js          Supabase client, reads VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY
     postsApi.js                 fetch/create posts, comments, likes, quarantine, mod log
     squadsApi.js                 fetch/join/leave/create squads
+    vibesApi.js                   fetch/create/quarantine vibes, real Q&amp;A comments
+    storageApi.js                 image and video upload helpers (Supabase Storage)
     usersApi.js                  real profiles directory + mentor lookup
     messagesApi.js               DM thread fetch/send
     format.js                    timeAgo / timestamp formatting helpers
@@ -179,7 +190,7 @@ src/
     FeedView.jsx                 center feed workspace (Home / My Major / squad detail)
     SquadsView.jsx                squad list, join/leave/create, squad detail feed
     PostCard.jsx                  post card, composer, comments, likes, share-to-clipboard
-    VibesView.jsx                 9:16 mock video player, transcript, Q&A, keyboard nav
+    VibesView.jsx                 real video upload/playback, live Q&amp;A, keyboard nav
     DMModal.jsx                   real-time direct message thread
     Shared.jsx                    Avatar, TierBadge, Toast, ReportMenu
 ```
