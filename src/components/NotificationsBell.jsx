@@ -85,7 +85,7 @@ export default function NotificationsBell({ currentUser, onOpenDM, onError }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative w-9 h-9 rounded-full flex items-center justify-center"
+        className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center"
         style={{ background: "var(--bg)", color: "var(--text)" }}
         aria-label="Notifications"
       >

@@ -10,7 +10,7 @@ const TABS = [
 export default function MobileTabBar({ activeView, setActiveView }) {
   return (
     <nav
-      className="md:hidden shrink-0 h-14 flex items-stretch"
+      className="safe-bottom md:hidden shrink-0 h-14 flex items-stretch"
       style={{ background: "var(--surface)", borderTop: "1px solid var(--border)" }}
     >
       {TABS.map((t) => {

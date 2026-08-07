@@ -52,6 +52,14 @@ body,
   overflow: hidden;
 }
 
+.safe-top {
+  padding-top: max(0px, env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

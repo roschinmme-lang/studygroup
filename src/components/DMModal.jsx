@@ -100,7 +100,7 @@ export default function DMModal({ currentUser, otherUser, onClose, onError }) {
               if (e.key === "Enter") submit();
             }}
             placeholder="Message..."
-            className="flex-1 h-9 rounded-full px-3 text-sm outline-none"
+            className="flex-1 min-w-0 h-9 rounded-full px-3 text-sm outline-none"
             style={{ background: "var(--bg)", color: "var(--text)" }}
           />
           <button

@@ -52,9 +52,9 @@ export function Composer({ activeUser, onPost, onError }) {
   }
 
   return (
-    <div className="rounded-xl p-4 mb-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-      <div className="flex items-center gap-3">
-        <Avatar initials={activeUser.initials} color={activeUser.color} size={38} />
+    <div className="rounded-xl p-3 sm:p-4 mb-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <Avatar initials={activeUser.initials} color={activeUser.color} size={34} />
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -63,7 +63,7 @@ export function Composer({ activeUser, onPost, onError }) {
           }}
           disabled={blocked}
           placeholder={blocked ? "View-only account \u2014 posting disabled" : "Share something with your squad..."}
-          className="flex-1 h-10 rounded-full px-4 text-sm outline-none"
+          className="flex-1 min-w-0 h-10 rounded-full px-4 text-sm outline-none"
           style={{ background: "var(--bg)", color: "var(--text)" }}
         />
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePickImage} className="hidden" disabled={blocked} />
@@ -71,7 +71,7 @@ export function Composer({ activeUser, onPost, onError }) {
           onClick={() => fileInputRef.current?.click()}
           disabled={blocked}
           title={blocked ? "JHS accounts have view-only privileges" : "Add a photo"}
-          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 transition-colors"
           style={{
             background: "var(--bg)",
             color: blocked ? "var(--text-secondary)" : "var(--text)",
@@ -84,7 +84,7 @@ export function Composer({ activeUser, onPost, onError }) {
           onClick={submit}
           disabled={blocked || uploading || (!text.trim() && !imageFile)}
           title={blocked ? "JHS accounts have view-only privileges" : "Post"}
-          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 transition-colors"
           style={{
             background: blocked || uploading || (!text.trim() && !imageFile) ? "var(--bg)" : "var(--accent)",
             color: blocked || uploading || (!text.trim() && !imageFile) ? "var(--text-secondary)" : "#050505",
@@ -253,12 +253,12 @@ export default function PostCard({ post, onReport, onAddComment, onToggleLike })
                 if (e.key === "Enter") submitComment();
               }}
               placeholder="Write a comment..."
-              className="flex-1 h-8 rounded-full px-3 text-xs outline-none"
+              className="flex-1 min-w-0 h-9 rounded-full px-3 text-xs outline-none"
               style={{ background: "var(--bg)", color: "var(--text)" }}
             />
             <button
               onClick={submitComment}
-              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+              className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
               style={{ background: "var(--accent)", color: "#050505" }}
             >
               <Send size={13} />

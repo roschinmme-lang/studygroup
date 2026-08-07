@@ -25,7 +25,7 @@ function SquadRow({ squad, onJoin, onLeave, onOpen }) {
       {squad.joined ? (
         <button
           onClick={() => onLeave(squad)}
-          className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
+          className="text-xs font-semibold px-3.5 py-2 rounded-full shrink-0"
           style={{ background: "var(--bg)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
         >
           Leave
@@ -33,7 +33,7 @@ function SquadRow({ squad, onJoin, onLeave, onOpen }) {
       ) : (
         <button
           onClick={() => onJoin(squad)}
-          className="text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
+          className="text-xs font-semibold px-3.5 py-2 rounded-full shrink-0"
           style={{ background: "var(--accent)", color: "#050505" }}
         >
           Join

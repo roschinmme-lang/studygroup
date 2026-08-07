@@ -202,10 +202,10 @@ export default function VibesView({ vibes, onReport, onPost, onAddComment, activ
       ) : (
         <div className="flex-1 flex flex-col lg:flex-row justify-center items-center lg:items-start gap-5 w-full">
           {/* Video player */}
-          <div className="flex flex-col items-center gap-3 shrink-0">
+          <div className="flex flex-col items-center gap-3 shrink-0 w-full sm:w-auto">
             <div
-              className="relative rounded-2xl overflow-hidden shrink-0"
-              style={{ width: 260, height: Math.round((260 * 16) / 9), background: "#000", border: "1px solid var(--border)" }}
+              className="relative rounded-2xl overflow-hidden shrink-0 w-[70vw] max-w-[260px] aspect-[9/16]"
+              style={{ background: "#000", border: "1px solid var(--border)" }}
             >
               <video key={vibe.id} src={vibe.videoUrl} controls className="w-full h-full object-cover" />
               <div className="absolute top-3 right-3">
@@ -215,7 +215,7 @@ export default function VibesView({ vibes, onReport, onPost, onAddComment, activ
               </div>
             </div>
 
-            <div className="text-center max-w-[260px]">
+            <div className="text-center w-[70vw] max-w-[260px]">
               <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>
                 {vibe.title}
               </p>
@@ -225,10 +225,10 @@ export default function VibesView({ vibes, onReport, onPost, onAddComment, activ
               </p>
             </div>
 
-            <div className="flex items-center gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+            <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-center" style={{ color: "var(--text-secondary)" }}>
               <button
                 onClick={() => setIndex((i) => Math.max(0, i - 1))}
-                className="w-8 h-8 rounded-full flex items-center justify-center"
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
               >
                 <ChevronUp size={16} />
@@ -238,7 +238,7 @@ export default function VibesView({ vibes, onReport, onPost, onAddComment, activ
               </span>
               <button
                 onClick={() => setIndex((i) => Math.min(vibes.length - 1, i + 1))}
-                className="w-8 h-8 rounded-full flex items-center justify-center"
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
               >
                 <ChevronDown size={16} />
@@ -281,12 +281,12 @@ export default function VibesView({ vibes, onReport, onPost, onAddComment, activ
                   if (e.key === "Enter") submitQuestion();
                 }}
                 placeholder="Ask a question..."
-                className="flex-1 h-8 rounded-full px-3 text-xs outline-none"
+                className="flex-1 min-w-0 h-9 rounded-full px-3 text-xs outline-none"
                 style={{ background: "var(--bg)", color: "var(--text)" }}
               />
               <button
                 onClick={submitQuestion}
-                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                 style={{ background: "var(--accent)", color: "#050505" }}
               >
                 <Send size={13} />

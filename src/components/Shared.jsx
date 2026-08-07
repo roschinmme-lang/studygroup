@@ -68,7 +68,7 @@ export function ReportMenu({ onReport, align = "right" }) {
       </button>
       {open && (
         <div
-          className={`absolute top-9 ${align === "right" ? "right-0" : "left-0"} w-64 rounded-xl shadow-xl overflow-hidden z-30`}
+          className={`absolute top-9 ${align === "right" ? "right-0" : "left-0"} w-64 max-w-[85vw] rounded-xl shadow-xl overflow-hidden z-30`}
           style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
         >
           <div
