@@ -31,6 +31,8 @@ Supabase backend (Postgres + Auth + Realtime).
      `vibe-videos` storage bucket for the Vibes Feed
    - `supabase/migration_009_security_hardening.sql` — **run this regardless**, even if you
      ran everything above already. See the Security section below for what it fixes.
+   - `supabase/migration_010_rate_limiting.sql` — **run this too**. Adds database-enforced
+     rate limits (see Security section).
 
 ## 3. Add "Continue with Google"
 
@@ -220,12 +222,24 @@ installs) — it fixes four real issues found in review:
 `vercel.json` also adds baseline security headers (`X-Frame-Options`, `X-Content-Type-Options`,
 `Referrer-Policy`, `Permissions-Policy`) to the deployed site.
 
-**Known limitation, not fixed by this migration:** there's no rate limiting on posting,
-commenting, liking, or messaging — a signed-in user could still spam actions quickly by scripting
-requests. Supabase's own Auth rate limits (Dashboard → Authentication → Rate Limits) cover
-signup/login abuse, but per-action throttling on the app's own tables would need an Edge Function
-or similar server-side layer — a bigger addition than a SQL migration. Worth building if this
-opens up beyond a small trusted group.
+**Rate limiting is now enforced too** (`supabase/migration_010_rate_limiting.sql`) — database
+triggers, not just client-side checks, so it applies no matter what calls the API:
+
+| Action | Limit |
+|---|---|
+| Posting | 10 per 5 minutes |
+| Posting a Reel (video upload) | 5 per hour |
+| Commenting (posts or Vibes Q&A) | 20 per 5 minutes |
+| Liking | 60 per 5 minutes |
+| Messaging | 30 per 5 minutes |
+| Creating a squad | 5 per hour |
+| Joining a squad | 20 per hour |
+| Reporting content | 20 per hour |
+
+Reporting is rate-limited too, on purpose — without it, someone could spam false reports to
+quarantine many other people's posts quickly, which would otherwise turn the moderation feature
+itself into an abuse vector. Limits are generous enough for normal use and live in
+`enforce_rate_limit()`/the per-table `rl_check_*` functions if you want to adjust them.
 
 ## Deploying
 

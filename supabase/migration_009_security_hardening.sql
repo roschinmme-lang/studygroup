@@ -49,7 +49,7 @@ begin
   end if;
 
   insert into mod_log (reason_label, target_snippet, device, lockout)
-  values (p_reason_label, p_target_snippet, p_device, 'Content permanently quarantined \u2022 kill-switch engaged');
+  values (p_reason_label, p_target_snippet, p_device, 'Content permanently quarantined - kill-switch engaged');
 end;
 $$ language plpgsql security definer set search_path = public;
 
