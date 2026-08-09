@@ -44,7 +44,7 @@ export function Toast({ toast }) {
 }
 
 /** Reusable "Report post" dropdown, used on feed cards and Vibes clips. */
-export function ReportMenu({ onReport, align = "right" }) {
+export function ReportMenu({ onReport, align = "right", iconColor }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -61,7 +61,7 @@ export function ReportMenu({ onReport, align = "right" }) {
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:opacity-80"
-        style={{ color: "var(--text-secondary)" }}
+        style={{ color: iconColor || "var(--text-secondary)" }}
         aria-label="Report options"
       >
         <MoreHorizontal size={18} />

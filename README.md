@@ -106,8 +106,9 @@ The layout adapts across three breakpoints:
   stays a drawer until `lg`.
 - **`lg` and up (desktop)**: the original fixed 3-column layout.
 
-The Vibes Feed player and Q&A panel stack vertically below `lg` instead of sitting
-side-by-side, and the DM modal sizes itself to the viewport instead of a fixed 380×520 box.
+The Vibes Feed is a full-bleed, edge-to-edge experience on every screen size by design (see
+below) rather than following the shared 3-column responsive rules. The DM modal still sizes
+itself to the viewport instead of a fixed 380×520 box.
 
 ## What's real now (no mock/placeholder logic left)
 
@@ -123,12 +124,15 @@ side-by-side, and the DM modal sizes itself to the viewport instead of a fixed 3
   Violence/Gore" sets `quarantined = true` on that row in the database (so it's gone for
   everyone, not just your browser) and writes a timestamped entry to the `mod_log` table, shown
   live in the Moderation Activity Center.
-- **Vibes Feed**: "Post a Reel" uploads a real video file to Supabase Storage (public
-  `vibe-videos` bucket, 50MB cap) and creates a real row in the `vibes` table. The Q&A thread is
-  backed by `vibe_comments` — real, persisted questions, not mock Q&A pairs. Reporting a clip as
-  severe quarantines it in the database the same way a post does. The old "auto-caption
-  transcript" feature was removed rather than kept as a placeholder — there's no real
-  transcription pipeline behind it.
+- **Vibes Feed**: a real TikTok-style vertical feed — full-screen scroll-snap between clips,
+  muted autoplay that follows whichever clip is in view (pausing and resetting the rest),
+  tap-to-pause, and a mute toggle that applies to the whole session once you turn sound on.
+  "Post a Reel" (floating button, bottom right) uploads a real video file to Supabase Storage
+  (public `vibe-videos` bucket, 50MB cap) and creates a real row in the `vibes` table. The Q&A
+  thread opens as an overlay panel (tap the message icon) and is backed by `vibe_comments` —
+  real, persisted questions, not mock Q&A pairs. Reporting a clip as severe quarantines it in the
+  database the same way a post does. The old "auto-caption transcript" feature was removed
+  rather than kept as a placeholder — there's no real transcription pipeline behind it.
 - **Student profiles sidebar**: shows real signed-up accounts (excluding yourself), not a
   seeded list. Empty until other people sign up.
 - **Study Squads**: real squads stored in `squads`/`squad_members`. You can create a squad,
@@ -194,7 +198,7 @@ src/
     FeedView.jsx                 center feed workspace (Home / My Major / squad detail)
     SquadsView.jsx                squad list, join/leave/create, squad detail feed
     PostCard.jsx                  post card, composer, comments, likes, share-to-clipboard
-    VibesView.jsx                 real video upload/playback, live Q&amp;A, keyboard nav
+    VibesView.jsx                 TikTok-style scroll-snap feed, autoplay, real upload, Q&amp;A overlay
     DMModal.jsx                   real-time direct message thread
     Shared.jsx                    Avatar, TierBadge, Toast, ReportMenu
 ```
