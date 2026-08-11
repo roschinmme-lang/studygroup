@@ -34,6 +34,8 @@ Supabase backend (Postgres + Auth + Realtime).
    - `supabase/migration_010_rate_limiting.sql` — **run this too**. Adds database-enforced
      rate limits (see Security section).
    - `supabase/migration_011_voice_calls.sql` — the `calls` table for real WebRTC voice calling
+   - `supabase/migration_012_fix_calls_updated_at.sql` — small fix, keeps `calls.updated_at`
+     accurate automatically via trigger
 
 ## 3. Add "Continue with Google"
 

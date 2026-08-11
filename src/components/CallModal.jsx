@@ -179,8 +179,24 @@ export default function CallModal({ call, currentUser, otherUser, isCaller, onCl
     const pc = await startConnection();
     if (!pc) return;
     try {
-      const fresh = await fetchCall(call.id);
-      if (!fresh.offer_sdp) throw new Error("The call ended before it could connect.");
+      // The caller might still be requesting microphone access or setting
+      // up their side when we tap Accept — their offer isn't written to
+      // the row instantly. Poll briefly instead of assuming "no offer yet"
+      // means the call already ended.
+      let fresh = await fetchCall(call.id);
+      let attempts = 0;
+      while (!fresh.offer_sdp && attempts < 20) {
+        if (fresh.status === "ended" || fresh.status === "declined") {
+          throw new Error("The call ended before it could connect.");
+        }
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        fresh = await fetchCall(call.id);
+        attempts++;
+      }
+      if (!fresh.offer_sdp) {
+        throw new Error("The call ended before it could connect.");
+      }
+
       await pc.setRemoteDescription(new RTCSessionDescription(fresh.offer_sdp));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
