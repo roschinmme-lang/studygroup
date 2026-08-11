@@ -33,6 +33,7 @@ Supabase backend (Postgres + Auth + Realtime).
      ran everything above already. See the Security section below for what it fixes.
    - `supabase/migration_010_rate_limiting.sql` — **run this too**. Adds database-enforced
      rate limits (see Security section).
+   - `supabase/migration_011_voice_calls.sql` — the `calls` table for real WebRTC voice calling
 
 ## 3. Add "Continue with Google"
 
@@ -142,6 +143,17 @@ itself to the viewport instead of a fixed 380×520 box.
 - **Send DM / Message Mentor**: real one-on-one messaging backed by a `messages` table, with a
   live-updating chat window. "Send DM" is disabled on minor profiles; "Message Mentor" opens a
   chat with whichever account has been flagged `is_mentor = true` (see setup note below).
+- **Voice calls**: real 1:1 audio calling via WebRTC, launched from the "Voice call" button
+  inside a DM. Supabase Realtime handles the signaling (exchanging the connection details two
+  browsers need to find each other) — no separate calling server. Ringing, accept/decline,
+  mute, hang up, and a 30-second no-answer timeout are all wired up.
+
+  **Known limitation:** it uses free public STUN servers only, not a paid TURN relay. This means
+  calls should connect reliably between people on normal home wifi, but may fail to connect for
+  someone behind a strict firewall/NAT (some school/office networks, some mobile carriers) —
+  that scenario needs a TURN relay, which requires a paid service (e.g. Twilio, Metered, or
+  self-hosted coturn) that isn't set up here. Fine for a small trusted-tester group; worth
+  revisiting before this goes wider.
 - **Notifications**: a bell icon in the top bar with an unread badge. You get a notification
   when someone likes or comments on your post, or sends you a DM — created by database triggers
   (`notify_on_like`, `notify_on_comment`, `notify_on_message`), so they fire regardless of which
@@ -186,6 +198,7 @@ src/
     storageApi.js                 image and video upload helpers (Supabase Storage)
     usersApi.js                  real profiles directory + mentor lookup
     messagesApi.js               DM thread fetch/send
+    callsApi.js                   WebRTC call signaling (create/accept/decline/end)
     format.js                    timeAgo / timestamp formatting helpers
   hooks/useAuth.js             signup / login / logout against Supabase Auth + profiles table
   data/mockData.js             tier metadata, Vibes seed clips, report reasons
@@ -200,6 +213,7 @@ src/
     PostCard.jsx                  post card, composer, comments, likes, share-to-clipboard
     VibesView.jsx                 TikTok-style scroll-snap feed, autoplay, real upload, Q&amp;A overlay
     DMModal.jsx                   real-time direct message thread
+    CallModal.jsx                  WebRTC voice call UI (ringing/active/hangup)
     Shared.jsx                    Avatar, TierBadge, Toast, ReportMenu
 ```
 

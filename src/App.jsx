@@ -9,6 +9,7 @@ import SquadsView from "./components/SquadsView.jsx";
 import AuthScreen from "./components/AuthScreen.jsx";
 import OnboardingScreen from "./components/OnboardingScreen.jsx";
 import DMModal from "./components/DMModal.jsx";
+import CallModal from "./components/CallModal.jsx";
 import { Toast } from "./components/Shared.jsx";
 import { DEVICE_STRING } from "./data/mockData.js";
 import { useAuth } from "./hooks/useAuth.js";
@@ -17,6 +18,8 @@ import { fetchPosts, createPost, addComment, toggleLike } from "./lib/postsApi.j
 import { fetchSquads, joinSquad, leaveSquad, createSquad } from "./lib/squadsApi.js";
 import { fetchVibes, createVibe, addVibeComment } from "./lib/vibesApi.js";
 import { fetchModLog, reportAndQuarantine } from "./lib/moderationApi.js";
+import { createCall } from "./lib/callsApi.js";
+import { fetchProfileById } from "./lib/usersApi.js";
 
 export default function App() {
   const { user, signup, login, loginWithGoogle, completeOnboarding, logout, loading: authLoading } = useAuth();
@@ -35,6 +38,7 @@ export default function App() {
   const [mobileLeftOpen, setMobileLeftOpen] = useState(false);
   const [mobileRightOpen, setMobileRightOpen] = useState(false);
   const [dmTarget, setDmTarget] = useState(null);
+  const [activeCall, setActiveCall] = useState(null); // { call, otherUser, isCaller }
 
   const showToast = useCallback((msg) => setToast(msg), []);
 
@@ -107,6 +111,43 @@ export default function App() {
       supabase.removeChannel(channel);
     };
   }, [user, refreshPosts, refreshModLog, refreshSquads, refreshVibes]);
+
+  // Incoming calls: listen for any new "ringing" call where I'm the callee,
+  // regardless of whether a DM with that person happens to be open.
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`incoming-calls-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "calls", filter: `callee_id=eq.${user.id}` },
+        async ({ new: row }) => {
+          if (row.status !== "ringing") return;
+          try {
+            const caller = await fetchProfileById(row.caller_id);
+            setActiveCall((current) => current ?? { call: row, otherUser: caller, isCaller: false });
+          } catch (err) {
+            setToast(err.message);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [user]);
+
+  const handleStartCall = useCallback(
+    async (otherUser) => {
+      if (!user) return;
+      try {
+        const call = await createCall({ callerId: user.id, calleeId: otherUser.id, callType: "audio" });
+        setActiveCall({ call, otherUser, isCaller: true });
+      } catch (err) {
+        setToast(err.message);
+      }
+    },
+    [user]
+  );
 
   useEffect(() => {
     if (!toast) return;
@@ -399,7 +440,24 @@ export default function App() {
             />
 
             {dmTarget && (
-              <DMModal currentUser={user} otherUser={dmTarget} onClose={() => setDmTarget(null)} onError={showToast} />
+              <DMModal
+                currentUser={user}
+                otherUser={dmTarget}
+                onClose={() => setDmTarget(null)}
+                onError={showToast}
+                onStartCall={handleStartCall}
+              />
+            )}
+
+            {activeCall && (
+              <CallModal
+                call={activeCall.call}
+                currentUser={user}
+                otherUser={activeCall.otherUser}
+                isCaller={activeCall.isCaller}
+                onClose={() => setActiveCall(null)}
+                onError={showToast}
+              />
             )}
           </>
         )}

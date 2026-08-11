@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { X, Send } from "lucide-react";
+import { X, Send, Phone } from "lucide-react";
 import { Avatar } from "./Shared.jsx";
 import { fetchThread, sendMessage } from "../lib/messagesApi.js";
 import { supabase } from "../lib/supabaseClient.js";
 
-export default function DMModal({ currentUser, otherUser, onClose, onError }) {
+export default function DMModal({ currentUser, otherUser, onClose, onError, onStartCall }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -65,6 +65,18 @@ export default function DMModal({ currentUser, otherUser, onClose, onError }) {
             <X size={18} />
           </button>
         </div>
+
+        {onStartCall && (
+          <div className="px-4 py-2 flex items-center gap-2" style={{ borderBottom: "1px solid var(--border)" }}>
+            <button
+              onClick={() => onStartCall(otherUser)}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
+              style={{ background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)" }}
+            >
+              <Phone size={13} /> Voice call
+            </button>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
           {loading ? (

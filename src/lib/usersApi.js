@@ -23,3 +23,15 @@ export async function fetchMentor() {
   if (error) throw new Error(error.message);
   return data;
 }
+
+/** Looks up a single profile by id — used for incoming calls, where a
+ *  realtime payload only gives us the caller's id, not their name/avatar. */
+export async function fetchProfileById(id) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, name, initials, color, tier")
+    .eq("id", id)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
