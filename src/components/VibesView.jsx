@@ -217,7 +217,7 @@ function ComposerModal({ activeUser, onPost, onError, onClose }) {
 
 /* ---------------------------------------------------------------- */
 
-function VibeSlide({ vibe, active, muted, onToggleMute, onReport, onOpenQA }) {
+function VibeSlide({ vibe, active, onToggleMute, onReport, onOpenQA }) {
   const videoRef = useRef(null);
   const [paused, setPaused] = useState(false);
   const [showIcon, setShowIcon] = useState(false);
