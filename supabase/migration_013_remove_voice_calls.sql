@@ -6,7 +6,12 @@
 -- even if some of these were never created.
 -- ------------------------------------------------------------------
 
-alter publication supabase_realtime drop table if exists calls;
+do $$
+begin
+  alter publication supabase_realtime drop table calls;
+exception when others then
+  null; -- table was never added to the publication, nothing to remove
+end $$;
 
 drop trigger if exists trg_rl_call on calls;
 drop trigger if exists trg_calls_updated_at on calls;

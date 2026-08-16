@@ -35,6 +35,8 @@ Supabase backend (Postgres + Auth + Realtime).
      rate limits (see Security section).
    - `supabase/migration_013_remove_voice_calls.sql` — cleans up an earlier voice-calling
      feature that's since been removed. Only needed if you ran migration 011 previously.
+   - `supabase/migration_014_lock_profile_fields.sql` — **run this regardless**, closes a real
+     self-escalation gap. See the Security section below.
 
 ## 3. Add "Continue with Google"
 
@@ -246,6 +248,24 @@ Reporting is rate-limited too, on purpose — without it, someone could spam fal
 quarantine many other people's posts quickly, which would otherwise turn the moderation feature
 itself into an abuse vector. Limits are generous enough for normal use and live in
 `enforce_rate_limit()`/the per-table `rl_check_*` functions if you want to adjust them.
+
+**A follow-up audit found one more serious issue**, fixed by `supabase/migration_014_lock_profile_fields.sql`
+(included in `schema.sql` for fresh installs):
+
+5. **Any signed-in user could self-escalate their own profile.** The "update your own profile"
+   policy checked *whose* row was being changed, but not *which fields* — so a normal
+   authenticated API call (no exploit tooling needed) could set `is_mentor = true` on any
+   account, making it the "trusted mentor" contact that minors get routed to. The same gap let a
+   JHS account set its own `tier` to `'UNI'` and `minor` to `false`, instantly removing the
+   View-Only posting restriction and the "can't be DM'd by adults" protection — undermining the
+   app's core safety design in one request. Fixed with a trigger that silently reverts any
+   client attempt to change `is_mentor` at all, and locks `tier`/`minor` once onboarding is
+   complete (they're meant to be chosen once, then immutable).
+
+   A smaller, lower-severity issue was fixed in the same migration: the "mark notification read"
+   policy could rewrite any field on your own notification rows (not a privilege escalation,
+   since it only touches your own inbox, but there was no reason to allow it) — locked to only
+   the `read` flag.
 
 ## Deploying
 
